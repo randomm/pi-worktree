@@ -6,15 +6,9 @@
 bun install
 ```
 
-## Pre-push Quality Gates
+## Pre-push quality gates
 
-Before any `git push`, run these commands locally and confirm all pass:
-
-```bash
-bunx biome check .      # Linting — zero violations
-bunx tsc --noEmit       # Type check — zero errors
-bun run test            # Tests — all passing
-```
+Before every push, run all local quality gates. See [AGENTS.md](AGENTS.md) — the "Pre-Push Quality Gates" section lists the canonical commands and thresholds.
 
 Never push to "see if CI catches anything." Fix locally first.
 

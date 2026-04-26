@@ -8,7 +8,7 @@ export default defineConfig({
 		include: ['tests/**/*.test.ts'],
 		coverage: {
 			provider: 'v8',
-			reporter: ['text', 'json', 'html'],
+			reporter: ['text', 'json'],
 			exclude: ['node_modules/', 'tests/', '.worktrees/', '*.config.ts'],
 			thresholds: {
 				lines: 80,
