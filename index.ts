@@ -90,8 +90,10 @@ export default function (pi: ExtensionAPI): void {
 		if (ctx?.ui && typeof ctx.ui.notify === 'function') {
 			try {
 				ctx.ui.notify(message, severity);
-			} catch {
-				// Ignore notification errors - don't let them crash the harness
+			} catch (notifyError) {
+				// Intentionally swallowed - UI notification is best-effort and must
+				// never crash the harness or interrupt session lifecycle.
+				void notifyError;
 			}
 		}
 	}

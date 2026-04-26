@@ -3,7 +3,7 @@
  * Implements all five footguns with explicit handling.
  */
 
-import { existsSync, readFileSync } from 'node:fs';
+import { readFile } from 'node:fs/promises';
 import { basename, join } from 'node:path';
 import {
 	BranchAlreadyCheckedOutError,
@@ -73,6 +73,18 @@ function worktreeNameFromPath(path: string): string {
 }
 
 /**
+ * Read lock file content safely.
+ */
+async function readLockContent(lockPath: string): Promise<string | null> {
+	try {
+		return await readFile(lockPath, 'utf-8');
+	} catch (err) {
+		if ((err as NodeJS.ErrnoException)?.code === 'ENOENT') return null;
+		throw err;
+	}
+}
+
+/**
  * Check if a lock file's content is a numeric PID.
  */
 function parseLockContent(content: string): number | false {
@@ -109,11 +121,11 @@ async function checkAndAutoUnlock(
 ): Promise<{ locked: boolean; autoUnlocked: boolean }> {
 	const lockPath = getWorktreeLockPath(repoRoot, worktreeName);
 
-	if (!existsSync(lockPath)) {
+	const content = await readLockContent(lockPath);
+	if (content === null) {
 		return { locked: false, autoUnlocked: false };
 	}
 
-	const content = readFileSync(lockPath, 'utf-8');
 	const trimmed = content.trim();
 
 	// Empty lock content → orphaned, safe to auto-unlock
@@ -218,10 +230,8 @@ export class WorktreeManager {
 			// Update state to ready
 			entry.state = transitionState('pending', 'ready');
 
-			// FOOTGUN 4: Check for detached HEAD
-			const worktreeList = await getWorktreeList(this.repoRoot, this.exec);
-			const currentWorktree = worktreeList.find((w) => w.path === worktreePath);
-			if (currentWorktree?.detached) {
+			// FOOTGUN 4: Emit warning if explicitly asked for detached
+			if (detach) {
 				emitWorktreeEvent(this.events, WORKTREE_LOCKED, {
 					name,
 					path: worktreePath,
@@ -240,7 +250,17 @@ export class WorktreeManager {
 			// Persist entry
 			await upsertEntry(this.repoRoot, entry);
 
-			return this.toWorktree(entry, currentWorktree);
+			// Return minimal worktree info (full list available via list())
+			return {
+				name,
+				path: worktreePath,
+				branch,
+				head: entry.head,
+				state: entry.state,
+				detached: detach ?? false,
+				locked: false,
+				prunable: false,
+			};
 		} catch (error) {
 			// Transition to failed state
 			entry.state = transitionState('pending', 'failed');
@@ -347,9 +367,12 @@ export class WorktreeManager {
 		if (locked) {
 			// Parse lock content for error message
 			const lockPath = getWorktreeLockPath(this.repoRoot, name);
-			const lockContent = readFileSync(lockPath, 'utf-8').trim();
-			const pid = parseLockContent(lockContent);
-			const reason = pid !== false ? pid : lockContent;
+			const lockContent = await readLockContent(lockPath);
+			// lockContent cannot be null here since locked=true requires a lock file,
+			// but handle it gracefully anyway
+			const trimmed = lockContent?.trim() ?? 'unknown';
+			const pid = parseLockContent(trimmed);
+			const reason = pid !== false ? pid : trimmed;
 			throw new LockedWorktreeError(name, reason);
 		}
 

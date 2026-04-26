@@ -2,6 +2,8 @@
  * Event name constants and payload type contracts for EventBus integration.
  */
 
+import type { WorktreeState } from './state-machine.js';
+
 export const WORKTREE_CREATED = 'worktree:created';
 export const WORKTREE_REMOVED = 'worktree:removed';
 export const WORKTREE_LOCKED = 'worktree:locked';
@@ -28,7 +30,7 @@ export interface WorktreeLockedPayload {
 export interface WorktreeFailedPayload {
 	name: string;
 	path: string;
-	state: string;
+	state: WorktreeState;
 	error: string;
 }
 
