@@ -44,7 +44,7 @@ Before ANY `git push`, all checks must pass locally:
 1. **Linting**: `bunx biome check .` — zero violations
 2. **Formatting**: `bunx biome format --write .` — all files formatted
 3. **Type checking**: `bunx tsc --noEmit` — zero errors
-4. **Tests**: `bun test` — all passing
+4. **Tests**: `bun run test` — all passing
 5. **Coverage**: 80%+ for new code (85%+ for high-risk modules)
 
 Never push to "see if CI catches anything." Fix locally first.
@@ -195,9 +195,9 @@ The master migration plan lives in `PI_MIGRATION.md` in the [pi-an repo](https:/
 | `bunx biome check .` | Lint all files — exits non-zero on violations |
 | `bunx biome format --write .` | Format all files in-place |
 | `bunx tsc --noEmit` | Type-check TypeScript without emitting |
-| `bun test` | Run all Vitest tests |
-| `bun test --coverage` | Run tests with coverage report |
-| `bunx biome check . && bun test` | Full pre-push quality gate |
+| `bun run test` | Run all Vitest tests |
+| `bun run test:coverage` | Run tests with coverage report |
+| `bunx biome check . && bun run test` | Full pre-push quality gate |
 
 ## Migration Scope
 
